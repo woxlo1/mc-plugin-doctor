@@ -6,8 +6,10 @@ Phases 0 and 1 establish the repository foundation and reusable core analysis
 engine. Phase 2 adds bounded local JAR inspection, inventories, manifest
 parsing, and supported plugin descriptor analysis. Phase 3 adds dependency
 graphs and cross-artifact dependency, duplicate-class, and plugin-identity
-conflict analysis. No command-line, desktop, web, or API product entry point
-exists yet. Product versioning remains unset.
+conflict analysis. Phase 4 adds Java/class-file version checks, platform
+descriptor compatibility, constant-pool API references, and catalog-driven
+deprecated/removed API findings. No command-line, desktop, web, or API product
+entry point exists yet. Product versioning remains unset.
 
 | Phase | Status |
 | --- | --- |
@@ -15,7 +17,7 @@ exists yet. Product versioning remains unset.
 | 1 — Core Engine | Implemented |
 | 2 — Basic JAR Analysis | Implemented |
 | 3 — Dependency Analysis | Implemented |
-| 4 — Compatibility Analysis | Planned |
+| 4 — Compatibility Analysis | Implemented |
 | 5 — Bytecode Analysis | Planned |
 
 ## Modules
@@ -23,7 +25,7 @@ exists yet. Product versioning remains unset.
 - The root Gradle project owns repository-wide build conventions.
 - `:core` is a Java library module containing common analysis models, analyzer
   and rule contracts, configuration, logging, error reporting, execution, and
-  JAR inspection and dependency analysis.
+  JAR inspection, dependency analysis, and profile-based compatibility analysis.
 - Future analyzer implementations will consume the core contracts. Reporting
   and user interfaces should remain separate modules and reuse the core engine.
 
@@ -88,8 +90,14 @@ detects missing required dependencies, hard-dependency cycles, duplicate plugin
 identities and versions, and classes shared across artifacts. It does not
 download dependencies or interpret version constraints because plugin
 descriptors do not provide dependency version requirements. Platform
-compatibility analysis, bytecode inspection, and report export are not
-implemented. CLI, desktop, web/API, file-backed
+compatibility analysis uses caller-supplied target profiles and API catalogs.
+The class-file scanner reads bounded entries without extraction, checks class
+versions and preview targets, inventories constant-pool class/member
+references, and reports deprecated/removed APIs included in the supplied
+catalog. No authoritative built-in platform/API catalog is bundled, and
+constant-pool scanning does not inspect bytecode instructions or data flow.
+ASM-based bytecode analysis and report export are not implemented. CLI,
+desktop, web/API, file-backed
 configuration, and external analyzer loading are also not implemented. They
 must not be described as available until completed and verified in their
 respective phases. Analysis of plugin artifacts remains local by default and
@@ -104,4 +112,5 @@ validation, dependency/priority ordering, analyzer failures, missing
 dependencies, cycles, timeout recovery, severity filtering, rule ordering,
 suppression, rule failures, safe archive reading, descriptor validation, basic
 report generation, dependency resolution, missing dependencies, cycles, duplicate
-classes, and plugin identity/version conflicts.
+classes, plugin identity/version conflicts, class-file parsing, Java/platform
+compatibility checks, supplied API catalog matches, and archive-change handling.
