@@ -11,6 +11,8 @@
 - Create a focused work branch from `develop`.
 - Do not commit directly to `main` or `develop`.
 - Use concise Conventional Commit messages in English.
+- Split work into small, logically related commits instead of combining a whole
+  phase into one commit.
 - Open a pull request from the work branch to `develop`.
 - Include the tests, build, and static checks that were run, and report any
   checks that could not be run.
