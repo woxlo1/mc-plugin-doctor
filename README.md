@@ -8,12 +8,14 @@
 
 Minecraft Plugin Doctor is a planned developer tool for inspecting and
 diagnosing Minecraft server plugins. The repository is in pre-development;
-Phase 0 establishes build and contribution foundations only.
+Phases 0 and 1 establish the repository foundation and reusable core analysis
+contracts and execution engine.
 
 ### Features
 
-- **Implemented:** Gradle foundation, Java 17 toolchain, basic runtime-baseline
-  test, and GitHub Actions verification.
+- **Implemented:** Gradle foundation, Java 17 toolchain, immutable analysis
+  findings and configuration, analyzer registry and execution engine, ordered
+  rule processing, logging/error reporting, and GitHub Actions verification.
 - **Planned:** Plugin inspection and all product interfaces. No JAR analysis or
   user-facing application is available yet.
 
@@ -36,8 +38,8 @@ commands in [Development Setup](#development-setup).
 
 ### Getting Started
 
-There is no plugin analysis workflow yet. The current repository supports
-building and running its foundation test only.
+The core analyzer API and engine are implemented, but no plugin-specific
+analyzers are available yet. There is no user-facing plugin analysis workflow.
 
 ### CLI Usage
 
@@ -49,7 +51,8 @@ building and running its foundation test only.
 
 ### Configuration
 
-**Planned.** Product configuration is not implemented.
+Core analysis configuration is implemented as an in-memory Java API. Loading or
+saving product configuration files is **Planned**.
 
 ### AI Configuration
 
@@ -67,8 +70,9 @@ and pushes to `develop`. It does not analyze plugin artifacts.
 
 ### Architecture
 
-See [the initial architecture](docs/architecture/overview.md). The only
-Gradle subproject currently present is `:core`; it has no production code.
+See [the architecture overview](docs/architecture/overview.md). The only
+Gradle subproject currently present is `:core`, which provides reusable analysis
+models, analyzer contracts, execution, and rules.
 
 ### Development Setup
 
@@ -78,7 +82,9 @@ Unix-like systems.
 ### Testing
 
 The wrapper's `check` task compiles the Java module with compiler warnings
-treated as errors and runs the Java runtime-baseline test.
+treated as errors and tests the runtime baseline, analysis models and
+configuration, analyzer ordering and failure handling, timeouts, and rule
+processing.
 
 ### Contributing
 
@@ -97,11 +103,11 @@ See [SECURITY.md](SECURITY.md) for private vulnerability reporting guidance.
 
 ### プロジェクト概要
 
-Minecraft Plugin Doctorは、Minecraftサーバープラグインの調査・診断を支援する開発者向けツールとして計画されています。現在は開発前段階であり、Phase 0ではビルドとコントリビューションの基盤のみを整備しています。
+Minecraft Plugin Doctorは、Minecraftサーバープラグインの調査・診断を支援する開発者向けツールとして計画されています。現在は開発前段階であり、Phase 0でリポジトリ基盤、Phase 1で再利用可能なCore解析契約と実行エンジンを整備しています。
 
 ### 機能
 
-- **Implemented（実装済み）:** Gradle基盤、Java 17ツールチェーン、基本ランタイムテスト、GitHub Actionsによる検証。
+- **Implemented（実装済み）:** Gradle基盤、Java 17ツールチェーン、不変の解析結果・設定モデル、Analyzer登録・実行エンジン、順序付きルール処理、ログ・エラー報告、GitHub Actionsによる検証。
 - **Planned（計画中）:** プラグイン解析および製品インターフェース。JAR解析や利用者向けアプリケーションはまだありません。
 
 ドキュメントでは機能の状態を **Planned**、**In Progress**、**Implemented**、**Experimental**、**Unsupported** で区別します。
@@ -120,7 +126,7 @@ Bukkit、Spigot、Paper、Folia、Purpur、Velocity、BungeeCordを解析対象�
 
 ### はじめに
 
-プラグイン解析の利用手順はまだありません。現時点ではリポジトリのビルドと基盤テストのみ実行できます。
+CoreのAnalyzer APIと実行エンジンは実装済みですが、プラグイン固有Analyzerはまだありません。利用者向けのプラグイン解析ワークフローはありません。
 
 ### CLIの使い方
 
@@ -132,7 +138,7 @@ Bukkit、Spigot、Paper、Folia、Purpur、Velocity、BungeeCordを解析対象�
 
 ### 設定
 
-**Planned（計画中）。** 製品設定は未実装です。
+Core解析設定はインメモリのJava APIとして実装済みです。製品設定ファイルの読み書きは**Planned（計画中）**です。
 
 ### AIの設定
 
@@ -148,7 +154,7 @@ CIワークフローは、`develop`宛てのPull Requestと`develop`へのpush�
 
 ### アーキテクチャ
 
-[初期アーキテクチャ文書](docs/architecture/overview.md)を参照してください。現在存在するGradleサブプロジェクトは`:core`のみで、製品コードはありません。
+[アーキテクチャ概要](docs/architecture/overview.md)を参照してください。現在存在するGradleサブプロジェクトは`:core`のみで、解析モデル、Analyzer契約、実行エンジン、ルール処理を提供します。
 
 ### 開発環境
 
@@ -156,7 +162,7 @@ JDK 17を用意し、Windowsでは`gradlew.bat check`、Unix系OSでは`./gradle
 
 ### テスト
 
-Gradle Wrapperの`check`タスクは、Javaコンパイラー警告をエラーとして扱ってコンパイルし、Javaランタイム基準のテストを実行します。
+Gradle Wrapperの`check`タスクはJavaコンパイラー警告をエラーとして扱ってコンパイルし、ランタイム基準、解析モデル・設定、Analyzerの実行順序と失敗処理、タイムアウト、ルール処理をテストします。
 
 ### コントリビューション
 
