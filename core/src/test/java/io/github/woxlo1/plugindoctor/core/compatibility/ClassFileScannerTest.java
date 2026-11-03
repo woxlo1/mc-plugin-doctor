@@ -1,6 +1,7 @@
 package io.github.woxlo1.plugindoctor.core.compatibility;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -57,6 +58,21 @@ class ClassFileScannerTest {
                 assertThrows(AnalysisException.class, () -> new ClassFileScanner().scan(report));
 
         assertEquals("CLASS_ARCHIVE_CHANGED", exception.code());
+    }
+
+    @Test
+    void propagatesClassFileConsumerFailures() throws IOException {
+        JarAnalysisReport report =
+                new JarAnalysisService().inspect(createJar("fixture/Fixture.class", fixtureBytes()));
+        IllegalArgumentException failure = new IllegalArgumentException("consumer failure");
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> new ClassFileScanner().scan(report, (path, contents) -> {
+                    throw failure;
+                }));
+
+        assertSame(failure, exception);
     }
 
     private Path createJar(String entry, byte[] contents) throws IOException {
