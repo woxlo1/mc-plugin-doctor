@@ -3,5 +3,9 @@ Minecraft Plugin Doctor
 This project is distributed under the Apache License, Version 2.0. See the
 LICENSE file for the full license text.
 
-No third-party NOTICE files are required for the Phase 0 project sources.
+ASM 9.7.1 is an external Gradle dependency licensed under BSD-3-Clause. It is
+not vendored in this repository. Any product distribution that bundles ASM
+must include its required upstream copyright, license conditions, and
+disclaimer. See https://asm.ow2.io/license.html.
+
 JUnit Jupiter is used only for tests and is not included in a product artifact.
