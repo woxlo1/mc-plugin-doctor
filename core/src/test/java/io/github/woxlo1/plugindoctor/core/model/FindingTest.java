@@ -29,6 +29,15 @@ class FindingTest {
     }
 
     @Test
+    void acceptsConfidenceBoundariesAndRejectsInvalidSourceCoordinates() {
+        assertEquals(0.0, findingWithConfidence(0.0).confidence());
+        assertEquals(1.0, findingWithConfidence(1.0).confidence());
+        assertEquals(1, new SourceLocation("plugin.yml", 1, 1).line());
+        assertThrows(IllegalArgumentException.class, () -> new SourceLocation("plugin.yml", 0, 1));
+        assertThrows(IllegalArgumentException.class, () -> new SourceLocation("plugin.yml", 1, 0));
+    }
+
+    @Test
     void rejectsBlankRequiredTextAndEvidence() {
         assertThrows(IllegalArgumentException.class, () -> findingWithRuleId(" "));
         assertThrows(

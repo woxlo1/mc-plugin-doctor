@@ -8,6 +8,9 @@ import io.github.woxlo1.plugindoctor.core.logging.AnalysisLogger;
 import io.github.woxlo1.plugindoctor.core.model.AnalysisError;
 import io.github.woxlo1.plugindoctor.core.model.Finding;
 import io.github.woxlo1.plugindoctor.core.model.Severity;
+import io.github.woxlo1.plugindoctor.core.rules.AnalysisRule;
+import io.github.woxlo1.plugindoctor.core.rules.RuleDecision;
+import io.github.woxlo1.plugindoctor.core.rules.RuleEngine;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -83,7 +86,7 @@ class AnalysisEngineTest {
                 context -> result(finding("fast")));
         AnalysisConfiguration configuration = configuration(
                 java.util.Map.of("slow", new AnalyzerConfiguration(
-                        true, java.util.Map.of(), Optional.of(Duration.ofMillis(300))));
+                        true, java.util.Map.of(), Optional.of(Duration.ofMillis(300)))));
 
         AnalysisResult result = analyze(engine(slow, fast), configuration);
 
@@ -105,8 +108,12 @@ class AnalysisEngineTest {
         PluginAnalyzer cycleB = analyzer(
                 metadata("cycle-b", 0, Set.of("cycle-a")),
                 context -> result(finding("cycle-b")));
+        PluginAnalyzer cycleDependent = analyzer(
+                metadata("cycle-dependent", -1, Set.of("cycle-a")),
+                context -> result(finding("cycle-dependent")));
 
-        AnalysisResult result = analyze(engine(missing, cycleA, cycleB), DEFAULT_CONFIGURATION);
+        AnalysisResult result = analyze(
+                engine(missing, cycleA, cycleB, cycleDependent), DEFAULT_CONFIGURATION);
 
         assertTrue(result.errors().stream()
                 .anyMatch(error -> error.code().equals("ANALYZER_DEPENDENCY_MISSING")));
@@ -116,6 +123,15 @@ class AnalysisEngineTest {
         assertEquals(AnalyzerExecutionStatus.SKIPPED, execution(result, "missing").status());
         assertEquals(AnalyzerExecutionStatus.SKIPPED, execution(result, "cycle-a").status());
         assertEquals(AnalyzerExecutionStatus.SKIPPED, execution(result, "cycle-b").status());
+        assertEquals(
+                AnalyzerExecutionStatus.SKIPPED,
+                execution(result, "cycle-dependent").status());
+        assertTrue(result.errors().stream()
+                .anyMatch(error -> error.componentId().equals("cycle-dependent")
+                        && error.code().equals("ANALYZER_DEPENDENCY_UNAVAILABLE")));
+        assertFalse(result.errors().stream()
+                .anyMatch(error -> error.componentId().equals("cycle-dependent")
+                        && error.code().equals("ANALYZER_DEPENDENCY_CYCLE")));
         assertTrue(result.findings().isEmpty());
     }
 
@@ -154,6 +170,34 @@ class AnalysisEngineTest {
     }
 
     @Test
+    void appliesRulesBeforeTheMinimumSeverityFilter() {
+        PluginAnalyzer low = analyzer(
+                metadata("low", 1, Set.of()),
+                context -> result(finding("low", Severity.LOW)));
+        AnalysisRule promote = new AnalysisRule() {
+            @Override
+            public String id() {
+                return "rule.promote";
+            }
+
+            @Override
+            public RuleDecision evaluate(Finding finding) {
+                return RuleDecision.overrideSeverity(Severity.HIGH, "Promoted for test");
+            }
+        };
+        AnalysisEngine engine = new AnalysisEngine(
+                new AnalyzerRegistry(List.of(low)),
+                new RuleEngine(List.of(promote)),
+                new TestLogger());
+        AnalysisConfiguration configuration = new AnalysisConfiguration(
+                Duration.ofSeconds(2), Severity.MEDIUM, true, java.util.Map.of());
+
+        AnalysisResult result = analyze(engine, configuration);
+
+        assertEquals(Severity.HIGH, result.findings().get(0).severity());
+    }
+
+    @Test
     void registryRejectsDuplicateAnalyzerIds() {
         PluginAnalyzer first = analyzer(metadata("duplicate", 0, Set.of()), context -> AnalyzerResult.empty());
         PluginAnalyzer second = analyzer(metadata("duplicate", 1, Set.of()), context -> AnalyzerResult.empty());
@@ -161,6 +205,38 @@ class AnalysisEngineTest {
         org.junit.jupiter.api.Assertions.assertThrows(
                 IllegalArgumentException.class,
                 () -> new AnalyzerRegistry(List.of(first, second)));
+    }
+
+    @Test
+    void runsAnalyzerLifecycleAroundEachAnalysis() {
+        List<String> lifecycle = new ArrayList<>();
+        PluginAnalyzer managed = new PluginAnalyzer() {
+            @Override
+            public AnalyzerMetadata metadata() {
+                return AnalysisEngineTest.metadata("managed", 0, Set.of());
+            }
+
+            @Override
+            public void initialize(AnalyzerContext context) {
+                lifecycle.add("initialize");
+            }
+
+            @Override
+            public AnalyzerResult analyze(AnalyzerContext context) {
+                lifecycle.add("analyze");
+                return result(finding("managed"));
+            }
+
+            @Override
+            public void close() {
+                lifecycle.add("close");
+            }
+        };
+
+        AnalysisResult result = analyze(engine(managed), DEFAULT_CONFIGURATION);
+
+        assertTrue(result.isSuccessful());
+        assertEquals(List.of("initialize", "analyze", "close"), lifecycle);
     }
 
     private static AnalysisEngine engine(PluginAnalyzer... analyzers) {
