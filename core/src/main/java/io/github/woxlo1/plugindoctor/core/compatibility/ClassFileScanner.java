@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -38,7 +39,14 @@ public final class ClassFileScanner {
     }
 
     public ClassFileScanResult scan(JarAnalysisReport report) {
+        return scan(report, (path, contents) -> {});
+    }
+
+    /** Supplies bounded, hash-verified class bytes; consumers must not modify the byte array. */
+    public ClassFileScanResult scan(
+            JarAnalysisReport report, BiConsumer<String, byte[]> classFileConsumer) {
         Objects.requireNonNull(report, "report");
+        Objects.requireNonNull(classFileConsumer, "classFileConsumer");
         if (report.entries().size() > limits.maximumEntries()) {
             throw rejected(
                     "CLASS_ENTRY_LIMIT_EXCEEDED",
@@ -88,9 +96,6 @@ public final class ClassFileScanner {
                             "CLASS_ARCHIVE_CHANGED",
                             "Class entry inventory changed after JAR analysis: " + path);
                 }
-                if (duplicatePaths.contains(path)) {
-                    continue;
-                }
                 validateEntryMetadata(entry, expected, path);
                 long remainingTotal = limits.maximumTotalUncompressedBytes() - totalBytes;
                 byte[] contents = readEntry(zipFile, entry, remainingTotal, path);
@@ -100,11 +105,15 @@ public final class ClassFileScanner {
                             "CLASS_ARCHIVE_CHANGED",
                             "Class entry content changed after JAR analysis: " + path);
                 }
+                ClassFileInfo classFile;
                 try {
-                    classes.add(referenceReader.read(new ByteArrayInputStream(contents), path));
+                    classFile = referenceReader.read(new ByteArrayInputStream(contents), path);
                 } catch (IOException | IllegalArgumentException exception) {
                     findings.add(invalidClassFile(path));
+                    continue;
                 }
+                classFileConsumer.accept(path, contents);
+                classes.add(classFile);
             }
             if (!observedDuplicatePaths.containsAll(duplicatePaths)) {
                 Set<String> disappeared = new HashSet<>(duplicatePaths);
