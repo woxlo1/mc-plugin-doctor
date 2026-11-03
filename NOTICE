@@ -1,0 +1,7 @@
+Minecraft Plugin Doctor
+
+This project is distributed under the Apache License, Version 2.0. See the
+LICENSE file for the full license text.
+
+No third-party NOTICE files are required for the Phase 0 project sources.
+JUnit Jupiter is used only for tests and is not included in a product artifact.
