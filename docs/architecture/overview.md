@@ -4,15 +4,17 @@
 
 Phases 0 and 1 establish the repository foundation and reusable core analysis
 engine. Phase 2 adds bounded local JAR inspection, inventories, manifest
-parsing, and supported plugin descriptor analysis. No command-line, desktop,
-web, or API product entry point exists yet. Product versioning remains unset.
+parsing, and supported plugin descriptor analysis. Phase 3 adds dependency
+graphs and cross-artifact dependency, duplicate-class, and plugin-identity
+conflict analysis. No command-line, desktop, web, or API product entry point
+exists yet. Product versioning remains unset.
 
 | Phase | Status |
 | --- | --- |
 | 0 — Repository Foundation | Implemented |
 | 1 — Core Engine | Implemented |
 | 2 — Basic JAR Analysis | Implemented |
-| 3 — Dependency Analysis | Planned |
+| 3 — Dependency Analysis | Implemented |
 | 4 — Compatibility Analysis | Planned |
 | 5 — Bytecode Analysis | Planned |
 
@@ -21,7 +23,7 @@ web, or API product entry point exists yet. Product versioning remains unset.
 - The root Gradle project owns repository-wide build conventions.
 - `:core` is a Java library module containing common analysis models, analyzer
   and rule contracts, configuration, logging, error reporting, execution, and
-  basic JAR inspection.
+  JAR inspection and dependency analysis.
 - Future analyzer implementations will consume the core contracts. Reporting
   and user interfaces should remain separate modules and reuse the core engine.
 
@@ -80,8 +82,14 @@ runtime dependencies are added or changed.
 The current JAR API reads archives without extraction, enforces configurable
 entry and uncompressed-size limits, parses Bukkit/Paper/BungeeCord/Velocity
 descriptors and the JAR manifest, and returns class/resource inventories with
-findings. It does not resolve dependencies, verify platform compatibility,
-inspect bytecode, or export reports. CLI, desktop, web/API, file-backed
+findings. Dependency analysis operates on a caller-supplied collection of
+these reports, resolves declared plugin identities within that collection,
+detects missing required dependencies, hard-dependency cycles, duplicate plugin
+identities and versions, and classes shared across artifacts. It does not
+download dependencies or interpret version constraints because plugin
+descriptors do not provide dependency version requirements. Platform
+compatibility analysis, bytecode inspection, and report export are not
+implemented. CLI, desktop, web/API, file-backed
 configuration, and external analyzer loading are also not implemented. They
 must not be described as available until completed and verified in their
 respective phases. Analysis of plugin artifacts remains local by default and
@@ -94,5 +102,6 @@ JDK 17. The core compiler enables `-Xlint:all -Werror`. Tests cover the runtime
 baseline, model validation and immutability, configuration defaults and
 validation, dependency/priority ordering, analyzer failures, missing
 dependencies, cycles, timeout recovery, severity filtering, rule ordering,
-suppression, rule failures, safe archive reading, descriptor validation, and
-basic report generation.
+suppression, rule failures, safe archive reading, descriptor validation, basic
+report generation, dependency resolution, missing dependencies, cycles, duplicate
+classes, and plugin identity/version conflicts.
