@@ -11,6 +11,8 @@ diagnosing Minecraft server plugins. The repository is in early development;
 Phases 0 and 1 establish the repository foundation and reusable core analysis
 engine, Phase 2 provides bounded, local JAR and plugin descriptor analysis, and
 Phase 3 analyzes dependencies and conflicts across supplied JAR reports.
+Phase 4 adds Java/platform compatibility checks, and Phase 5 adds ASM-backed
+class, method, field, and bytecode-reference analysis.
 
 ### Features
 
@@ -20,8 +22,10 @@ Phase 3 analyzes dependencies and conflicts across supplied JAR reports.
   Bukkit/Paper/BungeeCord/Velocity descriptor parsing, dependency graphs,
   missing required dependency and dependency-cycle findings, duplicate plugin
   and class detection, class-file reference inventory, Java/platform
-  compatibility checks, and catalog-driven deprecated/removed API findings.
-- **Planned:** ASM-based bytecode analysis, exported reports, and product
+  compatibility checks, catalog-driven deprecated/removed API findings, and
+  ASM-based class/method/field exploration with an in-memory bytecode reference
+  graph and analysis report.
+- **Planned:** Exported reports and product
   interfaces. No user-facing application is available yet.
 
 Feature statuses used in project documentation are **Planned**, **In Progress**,
@@ -51,6 +55,9 @@ dependencies and duplicate classes across a supplied set of JAR reports. There
 is no user-facing plugin analysis workflow yet. A compatibility API can compare
 class-file Java versions and descriptor API versions with a caller-supplied
 platform profile and detect catalogued deprecated or removed API references.
+The bytecode API can inspect class, method, and field metadata and produce a
+bounded reference graph for inheritance, type use, field access, method calls,
+and bootstrap references.
 
 ### CLI Usage
 
@@ -102,6 +109,8 @@ Dependency tests also cover graph resolution, missing dependencies, cycles,
 duplicate classes, and plugin identity/version conflicts.
 Compatibility tests cover class-file parsing, Java and platform version
 checks, API catalog matches, malformed classes, and changed archive entries.
+Bytecode tests cover ASM metadata extraction, method and field references,
+malformed classes, immutable reports, graph limits, and changed archives.
 
 ### Contributing
 
@@ -120,12 +129,12 @@ See [SECURITY.md](SECURITY.md) for private vulnerability reporting guidance.
 
 ### プロジェクト概要
 
-Minecraft Plugin Doctorは、Minecraftサーバープラグインの調査・診断を支援する開発者向けツールとして計画されています。現在は初期開発段階であり、Phase 0でリポジトリ基盤、Phase 1で再利用可能なCore解析エンジン、Phase 2で制限付きのローカルJAR解析とプラグインDescriptor解析、Phase 3で依存関係と競合の解析、Phase 4でJava・プラットフォーム互換性解析を実装しています。
+Minecraft Plugin Doctorは、Minecraftサーバープラグインの調査・診断を支援する開発者向けツールとして計画されています。現在は初期開発段階であり、Phase 0でリポジトリ基盤、Phase 1で再利用可能なCore解析エンジン、Phase 2で制限付きのローカルJAR解析とプラグインDescriptor解析、Phase 3で依存関係と競合の解析、Phase 4でJava・プラットフォーム互換性チェック、Phase 5でASMによるクラス・メソッド・フィールドおよびバイトコード参照の解析を実装しています。
 
 ### 機能
 
-- **Implemented（実装済み）:** Gradle基盤、Java 17ツールチェーン、不変の解析結果・設定モデル、Analyzer登録・実行エンジン、順序付きルール処理、ログ・エラー報告、制限付きJARインベントリ、ManifestおよびBukkit/Paper/BungeeCord/Velocity Descriptor解析、依存グラフ、必須依存関係の不足・循環の検出、プラグイン識別子とクラスの重複検出、クラスファイル参照の一覧、Java・プラットフォーム互換性チェック、カタログに基づく非推奨・削除済みAPI参照の検出。
-- **Planned（計画中）:** ASMを利用したバイトコード解析、レポート出力、製品インターフェース。利用者向けアプリケーションはまだありません。
+- **Implemented（実装済み）:** Gradle基盤、Java 17ツールチェーン、不変の解析結果・設定モデル、Analyzer登録・実行エンジン、順序付きルール処理、ログ・エラー報告、制限付きJARインベントリ、ManifestおよびBukkit/Paper/BungeeCord/Velocity Descriptor解析、依存グラフ、必須依存関係の不足・循環の検出、プラグイン識別子とクラスの重複検出、クラスファイル参照の一覧、Java・プラットフォーム互換性チェック、カタログに基づく非推奨・削除済みAPI参照の検出、ASMによるクラス・メソッド・フィールドの調査、不変のバイトコード参照グラフおよびインメモリ解析レポート。
+- **Planned（計画中）:** レポートのエクスポート、製品インターフェース。利用者向けアプリケーションはまだありません。
 
 ドキュメントでは機能の状態を **Planned**、**In Progress**、**Implemented**、**Experimental**、**Unsupported** で区別します。
 
@@ -143,7 +152,7 @@ Bukkit、Spigot、Paper、Folia、Purpur、Velocity、BungeeCordを解析対象�
 
 ### はじめに
 
-CoreのAnalyzer APIと実行エンジンは実装済みです。Java APIからローカルJARを展開せずに検査し、クラス・リソースを列挙し、Manifestと対応するプラグインDescriptorを解析してFindingを返せます。複数のJARレポートを入力すると、依存グラフの作成、必須依存関係の不足・循環、重複クラス、プラグイン識別子・バージョンの競合を検出できます。互換性APIはクラスファイルのJavaバージョンとDescriptorのAPIバージョンを指定プロファイルと比較し、利用者提供カタログにある非推奨・削除済みAPI参照を報告します。利用者向けの解析ワークフローはまだありません。
+CoreのAnalyzer APIと実行エンジンは実装済みです。Java APIからローカルJARを展開せずに検査し、クラス・リソースを列挙し、Manifestと対応するプラグインDescriptorを解析してFindingを返せます。複数のJARレポートを入力すると、依存グラフの作成、必須依存関係の不足・循環、重複クラス、プラグイン識別子・バージョンの競合を検出できます。互換性APIはクラスファイルのJavaバージョンとDescriptorのAPIバージョンを指定プロファイルと比較し、利用者提供カタログにある非推奨・削除済みAPI参照を報告します。ASMバイトコードAPIはクラス・メソッド・フィールド情報を調査し、継承、型利用、フィールドアクセス、メソッド呼び出し、Bootstrap参照の有界な参照グラフをインメモリレポートとして返します。利用者向けの解析ワークフローはまだありません。
 
 ### CLIの使い方
 
@@ -179,7 +188,7 @@ JDK 17を用意し、Windowsでは`gradlew.bat check`、Unix系OSでは`./gradle
 
 ### テスト
 
-Gradle Wrapperの`check`タスクはJavaコンパイラー警告をエラーとして扱ってコンパイルし、ランタイム基準、解析モデル・設定、Analyzerの実行順序と失敗処理、タイムアウト、ルール処理、制限付きJAR読み込み、対応するプラグインDescriptor解析、依存グラフ、不足依存関係、循環、重複クラス、プラグイン識別子・バージョン競合、クラスファイル解析、Java・プラットフォームバージョンチェック、APIカタログ照合、破損クラスと変更済みアーカイブをテストします。
+Gradle Wrapperの`check`タスクはJavaコンパイラー警告をエラーとして扱ってコンパイルし、ランタイム基準、解析モデル・設定、Analyzerの実行順序と失敗処理、タイムアウト、ルール処理、制限付きJAR読み込み、対応するプラグインDescriptor解析、依存グラフ、不足依存関係、循環、重複クラス、プラグイン識別子・バージョン競合、クラスファイル解析、Java・プラットフォームバージョンチェック、APIカタログ照合、ASMメタデータ抽出、バイトコード参照、グラフ上限、破損クラスと変更済みアーカイブをテストします。
 
 ### コントリビューション
 

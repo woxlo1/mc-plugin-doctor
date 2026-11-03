@@ -8,8 +8,10 @@ parsing, and supported plugin descriptor analysis. Phase 3 adds dependency
 graphs and cross-artifact dependency, duplicate-class, and plugin-identity
 conflict analysis. Phase 4 adds Java/class-file version checks, platform
 descriptor compatibility, constant-pool API references, and catalog-driven
-deprecated/removed API findings. No command-line, desktop, web, or API product
-entry point exists yet. Product versioning remains unset.
+deprecated/removed API findings. Phase 5 adds ASM-based class, method, and field
+exploration, bytecode reference graphs, and in-memory bytecode reports. No
+command-line, desktop, web, or API product entry point exists yet. Product
+versioning remains unset.
 
 | Phase | Status |
 | --- | --- |
@@ -18,14 +20,15 @@ entry point exists yet. Product versioning remains unset.
 | 2 — Basic JAR Analysis | Implemented |
 | 3 — Dependency Analysis | Implemented |
 | 4 — Compatibility Analysis | Implemented |
-| 5 — Bytecode Analysis | Planned |
+| 5 — Bytecode Analysis | Implemented |
 
 ## Modules
 
 - The root Gradle project owns repository-wide build conventions.
 - `:core` is a Java library module containing common analysis models, analyzer
   and rule contracts, configuration, logging, error reporting, execution, and
-  JAR inspection, dependency analysis, and profile-based compatibility analysis.
+  JAR inspection, dependency analysis, profile-based compatibility analysis,
+  and ASM-based bytecode analysis.
 - Future analyzer implementations will consume the core contracts. Reporting
   and user interfaces should remain separate modules and reuse the core engine.
 
@@ -70,9 +73,11 @@ untrusted artifacts.
 | Module boundary | Gradle multi-project, currently `:core` | Establishes a reusable library boundary and adds modules only when implemented. |
 | Tests | JUnit Jupiter 5.12.2 | Provides JVM unit tests; dependencies are test-only. |
 | Logging | JDK `java.util.logging` adapter behind a core interface | Avoids introducing a runtime logging framework dependency. |
+| Bytecode | ASM 9.7.1 | Provides bounded class, member, and instruction visitation without implementing a bytecode parser. |
 | CI | GitHub Actions on pull requests and pushes to `develop` | Runs wrapper validation and Gradle verification for integration changes. |
 
-JUnit's upstream metadata declares Eclipse Public License 2.0 and Eclipse
+ASM 9.7.1 declares BSD-3-Clause in its published Maven metadata. JUnit's
+upstream metadata declares Eclipse Public License 2.0 and Eclipse
 Distribution License 1.0. Jackson Databind and its Jackson Core and Annotations
 dependencies, as well as SnakeYAML, declare Apache License 2.0 in their
 upstream metadata. They are used for strict JSON and safe YAML descriptor
@@ -96,8 +101,11 @@ versions and preview targets, inventories constant-pool class/member
 references, and reports deprecated/removed APIs included in the supplied
 catalog. No authoritative built-in platform/API catalog is bundled, and
 constant-pool scanning does not inspect bytecode instructions or data flow.
-ASM-based bytecode analysis and report export are not implemented. CLI,
-desktop, web/API, file-backed
+The ASM bytecode API extracts class, method, and field metadata and builds
+bounded in-memory reference graphs for inheritance, type use, field access,
+method calls, exceptions, and bootstrap handles. The graph is a static
+reference inventory, not control-flow or data-flow analysis. Report export is
+not implemented. CLI, desktop, web/API, file-backed
 configuration, and external analyzer loading are also not implemented. They
 must not be described as available until completed and verified in their
 respective phases. Analysis of plugin artifacts remains local by default and
@@ -113,4 +121,6 @@ dependencies, cycles, timeout recovery, severity filtering, rule ordering,
 suppression, rule failures, safe archive reading, descriptor validation, basic
 report generation, dependency resolution, missing dependencies, cycles, duplicate
 classes, plugin identity/version conflicts, class-file parsing, Java/platform
-compatibility checks, supplied API catalog matches, and archive-change handling.
+compatibility checks, supplied API catalog matches, ASM class/member metadata,
+bytecode reference edges, graph limits, malformed classes, and archive-change
+handling.
