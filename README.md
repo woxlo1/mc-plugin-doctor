@@ -7,17 +7,19 @@
 ### Project Overview
 
 Minecraft Plugin Doctor is a planned developer tool for inspecting and
-diagnosing Minecraft server plugins. The repository is in pre-development;
+diagnosing Minecraft server plugins. The repository is in early development;
 Phases 0 and 1 establish the repository foundation and reusable core analysis
-contracts and execution engine.
+engine, and Phase 2 provides bounded, local JAR and plugin descriptor analysis.
 
 ### Features
 
 - **Implemented:** Gradle foundation, Java 17 toolchain, immutable analysis
   findings and configuration, analyzer registry and execution engine, ordered
-  rule processing, logging/error reporting, and GitHub Actions verification.
-- **Planned:** Plugin inspection and all product interfaces. No JAR analysis or
-  user-facing application is available yet.
+  rule processing, logging/error reporting, bounded JAR inventory, manifest and
+  Bukkit/Paper/BungeeCord/Velocity descriptor parsing, and GitHub Actions
+  verification.
+- **Planned:** Dependency, compatibility, and bytecode analysis; reports and
+  product interfaces. No user-facing application is available yet.
 
 Feature statuses used in project documentation are **Planned**, **In Progress**,
 **Implemented**, **Experimental**, and **Unsupported**.
@@ -38,8 +40,10 @@ commands in [Development Setup](#development-setup).
 
 ### Getting Started
 
-The core analyzer API and engine are implemented, but no plugin-specific
-analyzers are available yet. There is no user-facing plugin analysis workflow.
+The core analyzer API and engine are implemented. The Java API can inspect a
+local JAR without extraction, inventory classes and resources, parse its
+manifest and supported plugin descriptors, and return findings. There is no
+user-facing plugin analysis workflow yet.
 
 ### CLI Usage
 
@@ -61,7 +65,8 @@ implemented.
 
 ### Report Formats
 
-**Planned.** No report generation is implemented.
+**Planned.** The JAR analysis API returns an in-memory report; export formats
+and report generation are not implemented.
 
 ### GitHub Actions
 
@@ -72,7 +77,7 @@ and pushes to `develop`. It does not analyze plugin artifacts.
 
 See [the architecture overview](docs/architecture/overview.md). The only
 Gradle subproject currently present is `:core`, which provides reusable analysis
-models, analyzer contracts, execution, and rules.
+models, analyzer contracts, execution, rules, and the basic JAR inspection API.
 
 ### Development Setup
 
@@ -83,8 +88,8 @@ Unix-like systems.
 
 The wrapper's `check` task compiles the Java module with compiler warnings
 treated as errors and tests the runtime baseline, analysis models and
-configuration, analyzer ordering and failure handling, timeouts, and rule
-processing.
+configuration, analyzer ordering and failure handling, timeouts, rule
+processing, bounded JAR reading, and supported plugin descriptor analysis.
 
 ### Contributing
 
@@ -103,12 +108,12 @@ See [SECURITY.md](SECURITY.md) for private vulnerability reporting guidance.
 
 ### プロジェクト概要
 
-Minecraft Plugin Doctorは、Minecraftサーバープラグインの調査・診断を支援する開発者向けツールとして計画されています。現在は開発前段階であり、Phase 0でリポジトリ基盤、Phase 1で再利用可能なCore解析契約と実行エンジンを整備しています。
+Minecraft Plugin Doctorは、Minecraftサーバープラグインの調査・診断を支援する開発者向けツールとして計画されています。現在は初期開発段階であり、Phase 0でリポジトリ基盤、Phase 1で再利用可能なCore解析エンジン、Phase 2で制限付きのローカルJAR解析とプラグインDescriptor解析を実装しています。
 
 ### 機能
 
-- **Implemented（実装済み）:** Gradle基盤、Java 17ツールチェーン、不変の解析結果・設定モデル、Analyzer登録・実行エンジン、順序付きルール処理、ログ・エラー報告、GitHub Actionsによる検証。
-- **Planned（計画中）:** プラグイン解析および製品インターフェース。JAR解析や利用者向けアプリケーションはまだありません。
+- **Implemented（実装済み）:** Gradle基盤、Java 17ツールチェーン、不変の解析結果・設定モデル、Analyzer登録・実行エンジン、順序付きルール処理、ログ・エラー報告、制限付きJARインベントリ、ManifestおよびBukkit/Paper/BungeeCord/Velocity Descriptor解析、GitHub Actionsによる検証。
+- **Planned（計画中）:** 依存関係・互換性・バイトコード解析、レポート出力、製品インターフェース。利用者向けアプリケーションはまだありません。
 
 ドキュメントでは機能の状態を **Planned**、**In Progress**、**Implemented**、**Experimental**、**Unsupported** で区別します。
 
@@ -126,7 +131,7 @@ Bukkit、Spigot、Paper、Folia、Purpur、Velocity、BungeeCordを解析対象�
 
 ### はじめに
 
-CoreのAnalyzer APIと実行エンジンは実装済みですが、プラグイン固有Analyzerはまだありません。利用者向けのプラグイン解析ワークフローはありません。
+CoreのAnalyzer APIと実行エンジンは実装済みです。Java APIからローカルJARを展開せずに検査し、クラス・リソースを列挙し、Manifestと対応するプラグインDescriptorを解析してFindingを返せます。利用者向けの解析ワークフローはまだありません。
 
 ### CLIの使い方
 
@@ -146,7 +151,7 @@ Core解析設定はインメモリのJava APIとして実装済みです。製�
 
 ### レポート形式
 
-**Planned（計画中）。** レポート生成は未実装です。
+**Planned（計画中）。** JAR解析APIはインメモリのレポートを返しますが、エクスポート形式やレポート生成機能は未実装です。
 
 ### GitHub Actions
 
@@ -154,7 +159,7 @@ CIワークフローは、`develop`宛てのPull Requestと`develop`へのpush�
 
 ### アーキテクチャ
 
-[アーキテクチャ概要](docs/architecture/overview.md)を参照してください。現在存在するGradleサブプロジェクトは`:core`のみで、解析モデル、Analyzer契約、実行エンジン、ルール処理を提供します。
+[アーキテクチャ概要](docs/architecture/overview.md)を参照してください。現在存在するGradleサブプロジェクトは`:core`のみで、解析モデル、Analyzer契約、実行エンジン、ルール処理、基本的なJAR検査APIを提供します。
 
 ### 開発環境
 
@@ -162,7 +167,7 @@ JDK 17を用意し、Windowsでは`gradlew.bat check`、Unix系OSでは`./gradle
 
 ### テスト
 
-Gradle Wrapperの`check`タスクはJavaコンパイラー警告をエラーとして扱ってコンパイルし、ランタイム基準、解析モデル・設定、Analyzerの実行順序と失敗処理、タイムアウト、ルール処理をテストします。
+Gradle Wrapperの`check`タスクはJavaコンパイラー警告をエラーとして扱ってコンパイルし、ランタイム基準、解析モデル・設定、Analyzerの実行順序と失敗処理、タイムアウト、ルール処理、制限付きJAR読み込み、対応するプラグインDescriptor解析をテストします。
 
 ### コントリビューション
 

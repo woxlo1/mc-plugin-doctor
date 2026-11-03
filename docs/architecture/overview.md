@@ -3,14 +3,15 @@
 ## Status and scope
 
 Phases 0 and 1 establish the repository foundation and reusable core analysis
-engine. No plugin-specific analysis, command-line, desktop, web, or API product
-entry point exists yet. Product versioning remains unset.
+engine. Phase 2 adds bounded local JAR inspection, inventories, manifest
+parsing, and supported plugin descriptor analysis. No command-line, desktop,
+web, or API product entry point exists yet. Product versioning remains unset.
 
 | Phase | Status |
 | --- | --- |
 | 0 — Repository Foundation | Implemented |
 | 1 — Core Engine | Implemented |
-| 2 — Basic JAR Analysis | Planned |
+| 2 — Basic JAR Analysis | Implemented |
 | 3 — Dependency Analysis | Planned |
 | 4 — Compatibility Analysis | Planned |
 | 5 — Bytecode Analysis | Planned |
@@ -19,7 +20,8 @@ entry point exists yet. Product versioning remains unset.
 
 - The root Gradle project owns repository-wide build conventions.
 - `:core` is a Java library module containing common analysis models, analyzer
-  and rule contracts, configuration, logging, error reporting, and execution.
+  and rule contracts, configuration, logging, error reporting, execution, and
+  basic JAR inspection.
 - Future analyzer implementations will consume the core contracts. Reporting
   and user interfaces should remain separate modules and reuse the core engine.
 
@@ -67,18 +69,23 @@ untrusted artifacts.
 | CI | GitHub Actions on pull requests and pushes to `develop` | Runs wrapper validation and Gradle verification for integration changes. |
 
 JUnit's upstream metadata declares Eclipse Public License 2.0 and Eclipse
-Distribution License 1.0. No production/runtime dependencies are present.
-Third-party notices and license compatibility must be rechecked when runtime
-dependencies are proposed.
+Distribution License 1.0. Jackson Databind and its Jackson Core and Annotations
+dependencies, as well as SnakeYAML, declare Apache License 2.0 in their
+upstream metadata. They are used for strict JSON and safe YAML descriptor
+parsing. Third-party notices and license compatibility must be rechecked when
+runtime dependencies are added or changed.
 
 ## Deferred boundaries
 
-JAR reading and plugin descriptors, dependency graph analysis, compatibility
-and class-file analysis, bytecode inspection, reports, CLI, desktop, web/API,
-file-backed configuration, and external analyzer loading are not implemented.
-They must not be described as available until completed and verified in their
-respective phases. Analysis of plugin artifacts must remain local by default
-and treat input files as untrusted.
+The current JAR API reads archives without extraction, enforces configurable
+entry and uncompressed-size limits, parses Bukkit/Paper/BungeeCord/Velocity
+descriptors and the JAR manifest, and returns class/resource inventories with
+findings. It does not resolve dependencies, verify platform compatibility,
+inspect bytecode, or export reports. CLI, desktop, web/API, file-backed
+configuration, and external analyzer loading are also not implemented. They
+must not be described as available until completed and verified in their
+respective phases. Analysis of plugin artifacts remains local by default and
+treats input files as untrusted.
 
 ## Verification
 
@@ -87,4 +94,5 @@ JDK 17. The core compiler enables `-Xlint:all -Werror`. Tests cover the runtime
 baseline, model validation and immutability, configuration defaults and
 validation, dependency/priority ordering, analyzer failures, missing
 dependencies, cycles, timeout recovery, severity filtering, rule ordering,
-suppression, and rule failures.
+suppression, rule failures, safe archive reading, descriptor validation, and
+basic report generation.
